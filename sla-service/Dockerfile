@@ -1,5 +1,5 @@
 # ---- Étape 1 : compilation (image lourde, jetée ensuite) ----
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /build
 
 # Les dépendances d'abord : couche mise en cache tant que pom.xml ne change pas.

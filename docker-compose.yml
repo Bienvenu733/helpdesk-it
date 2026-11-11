@@ -16,7 +16,10 @@ services:
     ports:
       - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"   # accessible depuis votre machine uniquement
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      # -h 127.0.0.1 : on teste la connexion RÉSEAU. Sans cela, pg_isready interroge le socket local,
+      # que le serveur temporaire de la première initialisation ouvre déjà : le conteneur se déclare
+      # « prêt » alors que les autres services ne peuvent pas encore s'y connecter.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10

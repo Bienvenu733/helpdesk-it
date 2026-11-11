@@ -168,6 +168,12 @@ function hash(text: string) {
   return h;
 }
 
+/** « awa » -> « AW » ; « technicien2 » -> « T2 » (le chiffre distingue des noms qui se ressemblent). */
+function initials(name: string) {
+  const numbered = name.match(/^(\D)\D*(\d+)$/);
+  return numbered ? (numbered[1] + numbered[2]).slice(0, 2) : name.slice(0, 2);
+}
+
 export function Avatar({
   name,
   size = "md",
@@ -185,7 +191,7 @@ export function Avatar({
         AVATAR_TONES[hash(name) % AVATAR_TONES.length]
       } ${ring ? "ring-2 ring-surface" : ""}`}
     >
-      {name.slice(0, 2)}
+      {initials(name)}
     </span>
   );
 }

@@ -88,7 +88,20 @@ cd sla-service && ./mvnw test                                        # H2 en mé
 
 ## Intégration et déploiement continus (GitHub Actions)
 
-Le workflow `.github/workflows/ci.yml` se déclenche à chaque `push` sur `main` et à chaque pull request :
+### Branches et flux de travail
+
+```
+ feature / correctif  ──push──▶  develop  ──pull request──▶  main  ──▶ publication des images
+                                    │                           │
+                              CI à chaque envoi        CI à nouveau (porte d'entrée)
+```
+
+- `develop` reçoit le code en premier : le CI vérifie chaque envoi.
+- Une pull request `develop` → `main` rejoue toutes les vérifications avant la fusion.
+- Seule la branche `main` publie les images Docker.
+- Dependabot ouvre ses propositions vers `develop` (jamais directement vers `main`).
+
+Le workflow `.github/workflows/ci.yml` se déclenche à chaque `push` sur `main` ou `develop`, et à chaque pull request vers l'une de ces branches :
 
 | Job | Vérifie |
 |---|---|

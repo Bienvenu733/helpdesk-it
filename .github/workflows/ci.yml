@@ -1,9 +1,12 @@
 name: CI/CD
 
+# Flux de travail : le code est poussé sur « develop » (vérifié à chaque envoi), puis une pull
+# request develop -> main (vérifiée à nouveau) le fait entrer dans « main ».
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 # Une nouvelle poussée sur la même branche annule l'exécution précédente encore en cours.
 concurrency:

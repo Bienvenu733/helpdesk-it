@@ -1,0 +1,32 @@
+# Dependabot propose chaque semaine des mises à jour de dépendances (et alerte sur les
+# vulnérabilités connues) sous forme de pull requests, que le CI vérifie automatiquement.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /ticket-service
+    schedule:
+      interval: weekly
+  - package-ecosystem: maven
+    directory: /sla-service
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /ticket-service
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /sla-service
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

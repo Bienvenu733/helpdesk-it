@@ -4,6 +4,54 @@
 
 Projet personnel pour démontrer Django, Spring Boot, PostgreSQL, Oracle, REST, CI/CD et Docker.
 
+## Aperçu
+
+Les captures ont été prises sur la pile Docker complète, avec des données de démonstration.
+
+![Vue d'ensemble de l'administrateur](docs/screenshots/admin-vue-ensemble.png)
+
+*Vue d'ensemble de l'administrateur : indicateurs, activité des 14 derniers jours, répartition des pannes, fil d'activité et équipe technique. Le taux de respect du SLA est calculé par une fonction PL/SQL dans Oracle.*
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/admin-vue-ensemble-sombre.png" alt="Vue d'ensemble en mode sombre">
+      <br><sub><b>Mode sombre</b> : mémorisé, ou calqué sur le réglage du système.</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/technicien-tableau-de-bord.png" alt="Tableau de bord du technicien">
+      <br><sub><b>Technicien</b> : un seul ticket à la fois, notification à chaque attribution.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/utilisateur-tickets.png" alt="Espace de l'utilisateur">
+      <br><sub><b>Utilisateur</b> : signaler un incident et suivre ses tickets.</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/ticket-detail.png" alt="Détail d'un ticket avec conversation">
+      <br><sub><b>Détail d'un ticket</b> : échange privé entre l'auteur et le technicien, délai SLA suivi par Spring Boot.</sub>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="55%" valign="top">
+      <img src="docs/screenshots/login.png" alt="Page de connexion">
+      <br><sub><b>Connexion</b></sub>
+    </td>
+    <td width="22%" valign="top">
+      <img src="docs/screenshots/mobile-menu.png" alt="Menu sur mobile">
+      <br><sub><b>Mobile</b> : menu</sub>
+    </td>
+    <td width="22%" valign="top">
+      <img src="docs/screenshots/mobile-graphiques.png" alt="Graphiques sur mobile">
+      <br><sub><b>Mobile</b> : graphiques</sub>
+    </td>
+  </tr>
+</table>
+
 ## Architecture
 
 Deux services indépendants, chacun avec sa propre base, qui communiquent par une API REST protégée

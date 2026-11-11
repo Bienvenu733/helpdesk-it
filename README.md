@@ -118,4 +118,3 @@ gravée dans l'image du frontend).
 - [x] Tests automatisés (Django : pytest, Spring Boot : JUnit)
 - [x] PostgreSQL et Docker Compose
 - [x] CI/CD GitHub Actions (tests, test de bout en bout, publication des images)
-- [ ] Schémas UML, déploiement, dépôt public

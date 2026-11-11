@@ -1,25 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import { CircleCheck, Hourglass, Timer, TrendingUp, Wrench } from "lucide-react";
 import { useState } from "react";
-import { DailyChart } from "@/components/charts";
-import { api, CATEGORY_LABEL, PRIORITY_LABEL, TechStats } from "@/lib/api";
+import { CategoryBadge, PriorityBadge } from "@/components/badges";
+import { GroupedBarChart } from "@/components/charts";
+import { Badge, Button, Card, ErrorNote, LinkButton, Reveal, StatCard, Tabs } from "@/components/ui";
+import { api, TechStats } from "@/lib/api";
+import { timeAgo } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
-
-function Kpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return (
-    <div className="rounded border border-zinc-300 p-4 dark:border-zinc-700">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
-    </div>
-  );
-}
 
 export default function TechnicianDashboard() {
   const { data: s, error, reload } = useApi<TechStats>("/technician/stats/", 8_000);
   const [actionError, setActionError] = useState("");
   const [busyAction, setBusyAction] = useState(false);
+  const [range, setRange] = useState<"7" | "14">("14");
 
   async function resolve(id: number) {
     setActionError("");
@@ -34,78 +28,102 @@ export default function TechnicianDashboard() {
     }
   }
 
+  if (!s) {
+    return error ? <ErrorNote>{error}</ErrorNote> : <p className="text-sm text-ink-2">Chargement…</p>;
+  }
+
+  const cur = s.current_ticket;
+
   return (
-    <>
-      <h1 className="mb-6 text-2xl font-semibold">Tableau de bord</h1>
-      {(error || actionError) && (
-        <p className="mb-4 text-sm text-red-600">{actionError || error}</p>
-      )}
+    <div className="space-y-6">
+      {(error || actionError) && <ErrorNote>{actionError || error}</ErrorNote>}
 
-      {!s ? (
-        !error && <p className="text-sm text-zinc-500">Chargement…</p>
-      ) : (
-        <>
-          {s.current_ticket ? (
-            <section className="mb-6 rounded border border-amber-600 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-medium">Ticket en cours</h2>
-                <span className="rounded bg-amber-700 px-2 py-0.5 text-xs text-white">Occupé</span>
-              </div>
-              <p className="text-lg font-semibold">
-                #{s.current_ticket.id} {s.current_ticket.title}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {CATEGORY_LABEL[s.current_ticket.category]} ·{" "}
-                {PRIORITY_LABEL[s.current_ticket.priority]}
-              </p>
-              <p className="mt-3 whitespace-pre-wrap text-sm">{s.current_ticket.description}</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  href={`/tickets/${s.current_ticket.id}`}
-                  className="rounded border border-zinc-400 px-4 py-2 text-sm"
-                >
-                  Ouvrir et commenter
-                </Link>
-                <button
-                  disabled={busyAction}
-                  onClick={() => resolve(s.current_ticket!.id)}
-                  className="rounded bg-green-700 px-4 py-2 text-sm text-white disabled:opacity-50"
-                >
-                  Confirmer la résolution
-                </button>
-              </div>
-            </section>
-          ) : (
-            <section className="mb-6 rounded border border-green-700 p-4">
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="text-sm font-medium">Vous êtes disponible</h2>
-                <span className="rounded bg-green-700 px-2 py-0.5 text-xs text-white">
-                  Disponible
-                </span>
-              </div>
-              <p className="text-sm text-zinc-500">
-                Aucun ticket en cours. Le prochain ticket vous sera attribué automatiquement et
-                vous recevrez une notification.
-              </p>
-            </section>
-          )}
+      <Reveal delay={0.15}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            icon={Wrench}
+            tone={s.busy ? "warning" : "success"}
+            label="Votre état"
+            value={s.busy ? "Occupé" : "Disponible"}
+            hint={s.busy ? "Un ticket en cours" : "Prêt pour le prochain ticket"}
+          />
+          <StatCard icon={CircleCheck} tone="success" label="Résolus aujourd'hui" value={s.resolved_today} />
+          <StatCard icon={TrendingUp} tone="primary" label="Résolus au total" value={s.resolved_total} />
+          <StatCard
+            icon={Timer}
+            tone="info"
+            label="Délai moyen"
+            value={s.avg_resolution_hours === null ? "–" : `${s.avg_resolution_hours} h`}
+          />
+        </div>
+      </Reveal>
 
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi label="Résolus aujourd'hui" value={s.resolved_today} />
-            <Kpi label="Résolus au total" value={s.resolved_total} />
-            <Kpi
-              label="Délai moyen"
-              value={s.avg_resolution_hours === null ? "–" : `${s.avg_resolution_hours} h`}
+      <Reveal delay={0.25}>
+        {cur ? (
+          <Card className="border-warning/40" title="Ticket en cours" action={<Badge tone="warning">Occupé</Badge>}>
+            <p className="text-lg font-semibold text-ink">
+              #{cur.id} · {cur.title}
+            </p>
+            <p className="mt-2 flex flex-wrap items-center gap-2">
+              <CategoryBadge category={cur.category} />
+              <PriorityBadge priority={cur.priority} />
+              <span className="text-xs text-ink-2">signalé {timeAgo(cur.created_at)}</span>
+            </p>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-ink-2">{cur.description}</p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <LinkButton href={`/tickets/${cur.id}`} variant="secondary">
+                Ouvrir et commenter
+              </LinkButton>
+              <Button variant="success" disabled={busyAction} onClick={() => resolve(cur.id)}>
+                <CircleCheck className="size-4" aria-hidden />
+                Confirmer la résolution
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <Card>
+            <div className="flex items-center gap-4">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-success-soft text-success-ink">
+                <CircleCheck className="size-6" aria-hidden />
+              </span>
+              <div>
+                <p className="font-semibold text-ink">Vous êtes disponible</p>
+                <p className="text-sm text-ink-2">
+                  Le prochain ticket vous sera attribué automatiquement ; vous recevrez une notification.
+                  {s.waiting_count > 0 && ` ${s.waiting_count} ticket(s) attendent actuellement un technicien.`}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+      </Reveal>
+
+      <Reveal delay={0.35}>
+        <Card
+          title="Votre activité"
+          action={
+            <Tabs
+              value={range}
+              onChange={setRange}
+              options={[
+                { value: "7", label: "7 jours" },
+                { value: "14", label: "14 jours" },
+              ]}
             />
-            <Kpi label="En file d'attente" value={s.waiting_count} hint="Tickets sans technicien (pas de détail : chaque ticket reste privé)" />
-          </div>
+          }
+        >
+          <GroupedBarChart points={s.per_day.slice(-Number(range))} labels={["Reçus", "Résolus"]} />
+        </Card>
+      </Reveal>
 
-          <section className="rounded border border-zinc-300 p-4 dark:border-zinc-700">
-            <h2 className="mb-4 text-sm font-medium">Votre activité des 14 derniers jours</h2>
-            <DailyChart points={s.per_day} labels={["Reçus", "Résolus"]} />
-          </section>
-        </>
+      {s.waiting_count > 0 && (
+        <Reveal delay={0.4}>
+          <p className="flex items-center gap-2 text-sm text-ink-2">
+            <Hourglass className="size-4" aria-hidden />
+            {s.waiting_count} ticket(s) en file d&apos;attente (leur contenu reste privé jusqu&apos;à leur attribution).
+          </p>
+        </Reveal>
       )}
-    </>
+    </div>
   );
 }

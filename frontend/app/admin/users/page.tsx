@@ -1,42 +1,59 @@
 "use client";
 
+import { Avatar, Badge, Card, ErrorNote, Reveal, td, th, tableHead, tableRow, tableWrap, Tone } from "@/components/ui";
 import { AdminUser, ROLE_LABEL } from "@/lib/api";
 import { useApi } from "@/lib/hooks";
+import { matchesQuery, useSearch } from "@/lib/search";
+
+const ROLE_TONE: Record<AdminUser["role"], Tone> = { ADMIN: "primary", TECHNICIAN: "violet", USER: "neutral" };
 
 export default function UsersPage() {
   const { data, error } = useApi<AdminUser[]>("/admin/users/", 15_000);
-  const users = data ?? [];
+  const { query } = useSearch();
+  const users = (data ?? []).filter((u) => matchesQuery(query, [u.username, ROLE_LABEL[u.role]]));
 
   return (
-    <>
-      <h1 className="mb-6 text-2xl font-semibold">Utilisateurs</h1>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-      <div className="overflow-x-auto rounded border border-zinc-300 dark:border-zinc-700">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-300 text-xs text-zinc-500 dark:border-zinc-700">
-            <tr>
-              <th className="px-3 py-2">Utilisateur</th>
-              <th className="px-3 py-2">Rôle</th>
-              <th className="px-3 py-2">Disponibilité</th>
-              <th className="px-3 py-2">Tickets créés</th>
-              <th className="px-3 py-2">Tickets résolus</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b border-zinc-200 last:border-0 dark:border-zinc-800">
-                <td className="px-3 py-2">{u.username}</td>
-                <td className="px-3 py-2">{ROLE_LABEL[u.role]}</td>
-                <td className="px-3 py-2">
-                  {u.role === "TECHNICIAN" ? (u.busy ? "Occupé" : "Disponible") : "–"}
-                </td>
-                <td className="px-3 py-2">{u.created_count}</td>
-                <td className="px-3 py-2">{u.resolved_count}</td>
+    <Reveal>
+      {error && <ErrorNote>{error}</ErrorNote>}
+      <Card title={`${users.length} utilisateur${users.length > 1 ? "s" : ""}`} bodyClassName="pt-4">
+        <div className={tableWrap}>
+          <table className="w-full">
+            <thead className={tableHead}>
+              <tr>
+                <th className={th}>Utilisateur</th>
+                <th className={th}>Rôle</th>
+                <th className={th}>Disponibilité</th>
+                <th className={`${th} text-right`}>Tickets créés</th>
+                <th className={`${th} text-right`}>Tickets résolus</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className={tableRow}>
+                  <td className={td}>
+                    <span className="flex items-center gap-3">
+                      <Avatar name={u.username} size="sm" />
+                      <span className="font-medium">{u.username}</span>
+                    </span>
+                  </td>
+                  <td className={td}>
+                    <Badge tone={ROLE_TONE[u.role]}>{ROLE_LABEL[u.role]}</Badge>
+                  </td>
+                  <td className={td}>
+                    {u.role === "TECHNICIAN" ? (
+                      <Badge tone={u.busy ? "warning" : "success"}>{u.busy ? "Occupé" : "Disponible"}</Badge>
+                    ) : (
+                      <span className="text-ink-2">–</span>
+                    )}
+                  </td>
+                  <td className={`${td} text-right tabular-nums`}>{u.created_count}</td>
+                  <td className={`${td} text-right tabular-nums`}>{u.resolved_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </Reveal>
   );
 }

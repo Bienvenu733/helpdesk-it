@@ -1,107 +1,146 @@
 "use client";
 
-import { BarList, DailyChart } from "@/components/charts";
-import { AdminStats } from "@/lib/api";
+import { Activity, CircleCheck, Gauge, Hourglass, Ticket, Timer, TriangleAlert, Wrench } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { ActivityFeed } from "@/components/activity";
+import { BarList, DonutChart, GroupedBarChart } from "@/components/charts";
+import { TeamTable } from "@/components/team-table";
+import { Card, ErrorNote, Reveal, StatCard, Tabs } from "@/components/ui";
+import { ActivityEvent, AdminStats, AdminUser } from "@/lib/api";
 import { useApi } from "@/lib/hooks";
 
-function Kpi({
-  label,
-  value,
-  hint,
-  alert = false,
-}: {
-  label: string;
-  value: string | number;
-  hint?: string;
-  alert?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded border p-4 ${
-        alert ? "border-red-500" : "border-zinc-300 dark:border-zinc-700"
-      }`}
-    >
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className={`mt-1 text-3xl font-semibold tabular-nums ${alert ? "text-red-600" : ""}`}>
-        {value}
-      </p>
-      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
-    </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded border border-zinc-300 p-4 dark:border-zinc-700">
-      <h2 className="mb-4 text-sm font-medium">{title}</h2>
-      {children}
-    </section>
-  );
-}
+// Une couleur par catégorie de panne (variables de globals.css, palette validée clair et sombre)
+const CATEGORY_COLOR: Record<string, string> = {
+  HARDWARE: "var(--cat-1)",
+  NETWORK: "var(--cat-2)",
+  SOFTWARE: "var(--cat-3)",
+  ACCESS: "var(--cat-4)",
+  OTHER: "var(--cat-5)",
+};
 
 export default function OverviewPage() {
   const { data: s, error } = useApi<AdminStats>("/admin/stats/", 15_000);
+  const users = useApi<AdminUser[]>("/admin/users/", 15_000).data;
+  const activity = useApi<ActivityEvent[]>("/admin/activity/", 15_000).data;
+  const [range, setRange] = useState<"7" | "14">("14");
+
+  if (!s) {
+    return error ? <ErrorNote>{error}</ErrorNote> : <p className="text-sm text-ink-2">Chargement…</p>;
+  }
+
+  const t = s.totals;
+  const points = s.per_day.slice(-Number(range));
+  const slaRate = s.sla?.complianceRate;
+  // « Clôturé » n'existe pas dans le flux réel, et un ticket « ouvert » est en fait en attente d'un technicien.
+  const statusRows = s.by_status
+    .filter((r) => r.key !== "CLOSED")
+    .map((r) => (r.key === "OPEN" ? { ...r, label: "En attente" } : r));
 
   return (
-    <>
-      <h1 className="mb-6 text-2xl font-semibold">Vue d&apos;ensemble</h1>
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-      {!s ? (
-        !error && <p className="text-sm text-zinc-500">Chargement…</p>
-      ) : (
-        <>
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi label="Tickets au total" value={s.totals.total} />
-            <Kpi
-              label="En attente"
-              value={s.totals.waiting}
-              hint="Aucun technicien libre"
-              alert={s.totals.waiting > 0}
-            />
-            <Kpi label="En cours" value={s.totals.in_progress} />
-            <Kpi label="Résolus" value={s.totals.resolved} />
-            <Kpi
-              label="Techniciens occupés"
-              value={`${s.totals.technicians_busy} / ${s.totals.technicians}`}
-              hint={`${s.totals.technicians - s.totals.technicians_busy} disponible(s)`}
-            />
-            <Kpi
-              label="Délai moyen de résolution"
-              value={s.avg_resolution_hours === null ? "–" : `${s.avg_resolution_hours} h`}
-            />
-            <Kpi
-              label="SLA respecté"
-              value={
-                s.sla?.complianceRate == null ? "–" : `${s.sla.complianceRate} %`
-              }
-              hint={s.sla ? undefined : "Service SLA indisponible"}
-            />
-            <Kpi
-              label="Tickets en retard"
-              value={s.sla ? s.sla.overdue : "–"}
-              alert={!!s.sla && s.sla.overdue > 0}
-            />
-          </div>
+    <div className="space-y-6">
+      {error && <ErrorNote>{error}</ErrorNote>}
 
-          <div className="mb-4">
-            <Card title="Activité des 14 derniers jours">
-              <DailyChart points={s.per_day} />
-            </Card>
-          </div>
+      <Reveal delay={0.15}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard icon={Ticket} tone="info" label="Tickets au total" value={t.total} />
+          <StatCard icon={Activity} tone="primary" label="En cours" value={t.in_progress} />
+          <StatCard icon={CircleCheck} tone="success" label="Résolus" value={t.resolved} />
+          <StatCard
+            icon={Hourglass}
+            tone="warning"
+            label="En attente"
+            value={t.waiting}
+            hint={t.waiting > 0 ? "Aucun technicien libre" : "File vide"}
+          />
+          <StatCard
+            icon={Gauge}
+            tone="primary"
+            label="SLA respecté"
+            value={slaRate == null ? "–" : `${slaRate} %`}
+            hint={s.sla ? "Calculé par Oracle (PL/SQL)" : "Service SLA indisponible"}
+          />
+          <StatCard
+            icon={TriangleAlert}
+            tone="danger"
+            label="Tickets en retard"
+            value={s.sla ? s.sla.overdue : "–"}
+            alert={!!s.sla && s.sla.overdue > 0}
+          />
+          <StatCard
+            icon={Timer}
+            tone="info"
+            label="Délai moyen"
+            value={s.avg_resolution_hours === null ? "–" : `${s.avg_resolution_hours} h`}
+            hint="De la création à la résolution"
+          />
+          <StatCard
+            icon={Wrench}
+            tone="violet"
+            label="Techniciens occupés"
+            value={`${t.technicians_busy} / ${t.technicians}`}
+            hint={`${t.technicians - t.technicians_busy} disponible(s)`}
+          />
+        </div>
+      </Reveal>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card title="Pannes par catégorie">
-              <BarList rows={s.by_category} sort />
-            </Card>
-            <Card title="Tickets par priorité">
-              <BarList rows={s.by_priority} />
-            </Card>
-            <Card title="Tickets par statut">
-              <BarList rows={s.by_status} />
-            </Card>
-          </div>
-        </>
-      )}
-    </>
+      <Reveal delay={0.25}>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+          <Card
+            className="xl:col-span-3"
+            title="Activité des tickets"
+            action={
+              <Tabs
+                value={range}
+                onChange={setRange}
+                options={[
+                  { value: "7", label: "7 jours" },
+                  { value: "14", label: "14 jours" },
+                ]}
+              />
+            }
+          >
+            <GroupedBarChart points={points} labels={["Créés", "Résolus"]} />
+          </Card>
+
+          <Card className="xl:col-span-2" title="Pannes par catégorie" bodyClassName="flex items-center p-5">
+            <DonutChart
+              centerLabel="Tickets au total"
+              rows={s.by_category.map((c) => ({ ...c, color: CATEGORY_COLOR[c.key] ?? "var(--cat-5)" }))}
+            />
+          </Card>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.35}>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <Card
+            title="Activité récente"
+            action={
+              <Link href="/admin/activity" className="text-sm font-medium text-primary-strong hover:underline">
+                Tout voir
+              </Link>
+            }
+          >
+            <ActivityFeed events={activity ?? []} limit={5} />
+          </Card>
+
+          <Card title="Équipe technique" bodyClassName="pt-4 pb-2">
+            <TeamTable users={users ?? []} />
+          </Card>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.45}>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <Card title="Tickets par priorité">
+            <BarList rows={s.by_priority} />
+          </Card>
+          <Card title="Tickets par statut">
+            <BarList rows={statusRows} />
+          </Card>
+        </div>
+      </Reveal>
+    </div>
   );
 }

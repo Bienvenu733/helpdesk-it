@@ -1,7 +1,10 @@
 "use client";
 
+import { BellRing, Inbox } from "lucide-react";
 import Link from "next/link";
 import { NotificationItem } from "@/lib/api";
+import { timeAgo } from "@/lib/format";
+import { EmptyState } from "./ui";
 
 /** Bandeau affichant la notification non lue la plus récente. */
 export function NotificationBanner({
@@ -15,20 +18,23 @@ export function NotificationBanner({
   return (
     <div
       role="status"
-      className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded border border-blue-600 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100"
+      className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary-soft px-4 py-3 text-sm text-ink"
     >
-      <span>
-        <span className="font-medium">Nouvelle notification.</span> {latest.message}
+      <span className="flex items-center gap-3">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-fill text-white">
+          <BellRing className="size-4" aria-hidden />
+        </span>
+        <span>{latest.message}</span>
       </span>
-      <span className="flex gap-3">
+      <span className="flex gap-4 font-medium">
         <Link
           href={`/tickets/${latest.ticket_id}`}
           onClick={() => onRead(latest.id)}
-          className="font-medium underline"
+          className="text-primary-strong hover:underline"
         >
           Ouvrir le ticket
         </Link>
-        <button onClick={() => onRead(latest.id)} className="underline">
+        <button onClick={() => onRead(latest.id)} className="text-ink-2 hover:text-ink">
           Marquer comme lue
         </button>
       </span>
@@ -44,34 +50,31 @@ export function NotificationList({
   items: NotificationItem[];
   onRead: (id: number) => void;
 }) {
+  if (items.length === 0) {
+    return <EmptyState icon={Inbox}>Aucune notification pour le moment.</EmptyState>;
+  }
   return (
-    <ul className="flex flex-col gap-2">
-      {items.length === 0 && <li className="text-sm text-zinc-500">Aucune notification.</li>}
+    <ul className="divide-y divide-line">
       {items.map((n) => (
-        <li
-          key={n.id}
-          className={`flex items-start justify-between gap-3 rounded border px-4 py-3 text-sm ${
-            n.is_read
-              ? "border-zinc-300 text-zinc-500 dark:border-zinc-700"
-              : "border-blue-600 bg-blue-50 dark:bg-blue-950"
-          }`}
-        >
-          <span>
-            {n.message}
-            <span className="block text-xs text-zinc-500">
-              {new Date(n.created_at).toLocaleString("fr-FR")}
-            </span>
-          </span>
-          <span className="flex shrink-0 gap-3">
-            <Link href={`/tickets/${n.ticket_id}`} className="text-blue-600 underline">
+        <li key={n.id} className="flex items-start gap-4 px-5 py-4">
+          <span
+            className={`mt-1.5 size-2.5 shrink-0 rounded-full ${n.is_read ? "bg-line-strong" : "bg-primary"}`}
+            aria-label={n.is_read ? "Lue" : "Non lue"}
+          />
+          <div className="min-w-0 flex-1">
+            <p className={`text-sm ${n.is_read ? "text-ink-2" : "font-medium text-ink"}`}>{n.message}</p>
+            <p className="mt-0.5 text-xs text-ink-2">{timeAgo(n.created_at)}</p>
+          </div>
+          <div className="flex shrink-0 gap-4 text-sm">
+            <Link href={`/tickets/${n.ticket_id}`} className="font-medium text-primary-strong hover:underline">
               Ouvrir
             </Link>
             {!n.is_read && (
-              <button onClick={() => onRead(n.id)} className="underline">
+              <button onClick={() => onRead(n.id)} className="text-ink-2 hover:text-ink">
                 Marquer lue
               </button>
             )}
-          </span>
+          </div>
         </li>
       ))}
     </ul>

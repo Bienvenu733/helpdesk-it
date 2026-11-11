@@ -1,43 +1,197 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------------------------------
+   Système de design HelpDesk IT (inspiré d'un tableau de bord « admin » moderne)
+   Les couleurs sont des variables : le mode sombre change les valeurs, jamais les composants.
+   ------------------------------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 
-  /* Graphiques : palette validée (bleu / orange), grille et axes discrets. */
-  --viz-1: #2a78d6;
-  --viz-2: #eb6834;
-  --viz-grid: #e6e5e0;
-  --viz-axis: #8a8984;
-  --viz-track: #eeede9;
-  --viz-ink-2: #52514e;
-  --viz-surface: #fcfcfb;
+  /* Surfaces */
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --line: #f1f2f4; /* bordures des cartes (gray-100) */
+  --line-strong: #e5e7eb; /* bordures de la barre latérale et des champs (gray-200) */
+
+  /* Texte : --ink-3 n'est JAMAIS utilisé pour une information utile (contraste 2,6:1) */
+  --ink: #1e293b;
+  --ink-2: #64748b;
+  --ink-3: #94a3b8;
+
+  /* Indigo : --primary pour les accents et graphiques, --primary-fill pour les fonds portant du
+     texte blanc (contraste 4,8:1 au lieu de 4,5:1) */
+  --primary: #6366f1;
+  --primary-fill: #5c5fef;
+  --primary-strong: #4f46e5;
+  --primary-soft: #eef2ff;
+
+  --success: #22c55e;
+  --success-soft: #f0fdf4;
+  --success-ink: #15803d;
+  --warning: #f59e0b;
+  --warning-soft: #fffbeb;
+  --warning-ink: #b45309;
+  --danger: #ef4444;
+  --danger-soft: #fef2f2;
+  --danger-ink: #b91c1c;
+  --info: #3b82f6;
+  --info-soft: #eff6ff;
+  --info-ink: #1d4ed8;
+  --violet: #a78bfa;
+  --violet-soft: #f5f3ff;
+  --violet-ink: #6d28d9;
+
+  /* Graphiques */
+  --bar-gray: #cbd5e1;
+  /* Catégories du donut : l'ORDRE compte (indigo, vert, violet, orange) car il sépare les couleurs
+     voisines. Validé avec le contrôleur d'accessibilité (daltonisme compris), clair et sombre. Le gris
+     est le groupe « Autre » : volontairement neutre. */
+  --cat-1: #6366f1;
+  --cat-2: #22c55e;
+  --cat-3: #a78bfa;
+  --cat-4: #f59e0b;
+  --cat-5: #94a3b8;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-pop: 0 8px 24px rgb(16 24 40 / 0.12);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-2: #0f172a;
+  --line: #1f2937;
+  --line-strong: #2b3648;
+
+  --ink: #e5e7eb;
+  --ink-2: #9ca3af;
+  --ink-3: #6b7280;
+
+  --primary: #818cf8;
+  --primary-fill: #5c5fef;
+  --primary-strong: #a5b4fc;
+  --primary-soft: #1e1b4b;
+
+  --success: #4ade80;
+  --success-soft: #052e16;
+  --success-ink: #86efac;
+  --warning: #fbbf24;
+  --warning-soft: #3a2a05;
+  --warning-ink: #fcd34d;
+  --danger: #f87171;
+  --danger-soft: #3b0a0a;
+  --danger-ink: #fca5a5;
+  --info: #60a5fa;
+  --info-soft: #0b1e3f;
+  --info-ink: #93c5fd;
+  --violet: #a78bfa;
+  --violet-soft: #2e1065;
+  --violet-ink: #c4b5fd;
+
+  --bar-gray: #475569;
+  /* Teintes plus profondes pour le fond sombre (bande de luminosité de la méthode) */
+  --cat-1: #6366f1;
+  --cat-2: #16a34a;
+  --cat-3: #8b5cf6;
+  --cat-4: #d97706;
+  --cat-5: #64748b;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+
+/* Les variables deviennent des classes Tailwind : bg-surface, text-ink-2, border-line, etc. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-primary: var(--primary);
+  --color-primary-fill: var(--primary-fill);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ink: var(--danger-ink);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-ink: var(--info-ink);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-violet-ink: var(--violet-ink);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-
-    --viz-1: #3987e5;
-    --viz-2: #d95926;
-    --viz-grid: #2e2e2c;
-    --viz-axis: #8a8984;
-    --viz-track: #262625;
-    --viz-ink-2: #c3c2b7;
-    --viz-surface: #1a1a19;
-  }
+html {
+  background: var(--bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus visible pour la navigation au clavier */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Animations d'entrée (courbe douce, courtes) : barre latérale, barre du haut, puis le contenu
+   ------------------------------------------------------------------------------------------ */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.anim-slide-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-slide-down {
+  animation: slide-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+.anim-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0.15s);
+}
+
+/* Respect du réglage système « réduire les animations » */
+@media (prefers-reduced-motion: reduce) {
+  .anim-slide-left,
+  .anim-slide-down,
+  .anim-fade-up {
+    animation: none;
+  }
 }

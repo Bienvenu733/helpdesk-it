@@ -2,7 +2,6 @@
 
 [![CI/CD](https://github.com/Bienvenu733/helpdesk-it/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Bienvenu733/helpdesk-it/actions/workflows/ci.yml)
 
-Projet personnel pour démontrer Django, Spring Boot, PostgreSQL, Oracle, REST, CI/CD et Docker.
 
 ## Aperçu
 

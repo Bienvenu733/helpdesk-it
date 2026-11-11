@@ -1,7 +1,10 @@
 "use client";
 
+import { Hourglass } from "lucide-react";
 import Link from "next/link";
-import { CATEGORY_LABEL, PRIORITY_LABEL, Ticket } from "@/lib/api";
+import { Ticket } from "@/lib/api";
+import { CategoryBadge, PriorityBadge } from "./badges";
+import { EmptyState } from "./ui";
 
 const RANK = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
 
@@ -23,29 +26,28 @@ export function waitingQueue(tickets: Ticket[]) {
 }
 
 export function QueueList({ tickets }: { tickets: Ticket[] }) {
+  if (tickets.length === 0) {
+    return <EmptyState icon={Hourglass}>Aucun ticket en attente : tous sont pris en charge.</EmptyState>;
+  }
   return (
-    <ol className="flex flex-col gap-2">
-      {tickets.length === 0 && (
-        <li className="text-sm text-zinc-500">Aucun ticket en attente.</li>
-      )}
+    <ol className="divide-y divide-line">
       {tickets.map((t, i) => (
-        <li
-          key={t.id}
-          className="flex items-center justify-between gap-3 rounded border border-zinc-300 px-4 py-3 dark:border-zinc-700"
-        >
-          <span>
-            <span className="mr-2 text-zinc-500">{i + 1}.</span>
-            <Link href={`/tickets/${t.id}`} className="text-blue-600 underline">
-              #{t.id}
-            </Link>{" "}
-            {t.title}
-            <span className="block text-xs text-zinc-500">
-              {CATEGORY_LABEL[t.category]} · {PRIORITY_LABEL[t.priority]}
-            </span>
+        <li key={t.id} className="flex items-center gap-4 px-5 py-4">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning-soft text-sm font-semibold text-warning-ink">
+            {i + 1}
           </span>
-          <span className="whitespace-nowrap text-xs text-zinc-500">
-            attend depuis {waited(t.created_at)}
-          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-ink">
+              <Link href={`/tickets/${t.id}`} className="hover:text-primary-strong hover:underline">
+                #{t.id} · {t.title}
+              </Link>
+            </p>
+            <p className="mt-1 flex flex-wrap items-center gap-2">
+              <CategoryBadge category={t.category} />
+              <PriorityBadge priority={t.priority} />
+            </p>
+          </div>
+          <span className="shrink-0 text-xs text-ink-2">attend depuis {waited(t.created_at)}</span>
         </li>
       ))}
     </ol>

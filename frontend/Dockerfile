@@ -1,11 +1,11 @@
 # ---- Étape 1 : dépendances ----
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # ---- Étape 2 : compilation ----
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 # NEXT_PUBLIC_* est « gravée » dans le code JavaScript à la compilation : c'est l'adresse
 # de l'API telle que le NAVIGATEUR la voit. Pour la changer, il faut reconstruire l'image.
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # ---- Étape 3 : exécution (seulement le nécessaire) ----
-FROM node:22-alpine AS run
+FROM node:26-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 RUN addgroup -S app && adduser -S app -G app

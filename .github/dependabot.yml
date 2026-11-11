@@ -1,32 +1,88 @@
 # Dependabot propose chaque semaine des mises à jour de dépendances (et alerte sur les
 # vulnérabilités connues) sous forme de pull requests, que le CI vérifie automatiquement.
+#
+# Règles choisies pour limiter le bruit :
+#  - les PR visent « develop » (comme tout le code), jamais « main » directement ;
+#  - les versions MAJEURES des bibliothèques et les versions des environnements d'exécution
+#    (Java, Node, Python) sont des décisions à prendre à la main, pas des PR automatiques ;
+#  - les mises à jour mineures et correctifs sont regroupés en une seule PR par dossier ;
+#  - React et React-DOM montent toujours ensemble (ils exigent la même version).
 version: 2
 updates:
   - package-ecosystem: pip
     directory: /ticket-service
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: maven
     directory: /sla-service
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      java-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: npm
     directory: /frontend
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      npm-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Images Docker : on garde les versions de Java, Node et Python choisies (cohérentes avec le CI).
+  # Seules les montées de correctif restent possibles ; les changements de version sont manuels.
   - package-ecosystem: docker
     directory: /ticket-service
+    target-branch: develop
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: docker
     directory: /sla-service
+    target-branch: develop
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: docker
     directory: /frontend
+    target-branch: develop
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
   - package-ecosystem: github-actions
     directory: /
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]

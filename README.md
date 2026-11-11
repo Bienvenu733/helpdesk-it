@@ -1,23 +1,58 @@
 # HelpDesk IT : gestion des incidents informatiques
 
+[![CI/CD](https://github.com/Bienvenu733/helpdesk-it/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Bienvenu733/helpdesk-it/actions/workflows/ci.yml)
+
 Projet personnel pour démontrer Django, Spring Boot, PostgreSQL, Oracle, REST, CI/CD et Docker.
 
 ## Architecture
+
+Deux services indépendants, chacun avec sa propre base, qui communiquent par une API REST protégée
+par une clé. Tout démarre avec `docker compose up`.
+
+```mermaid
+flowchart TB
+    NAV(["🌐 Navigateur"])
+
+    subgraph DOCKER["Docker Compose"]
+        direction TB
+        FRONT["<b>frontend</b><br/>Next.js 16 · React<br/>:3000"]
+
+        subgraph TICKETS["Gestion des tickets"]
+            DJANGO["<b>ticket-service</b><br/>Django REST · JWT · gunicorn<br/>:8000"]
+            PG[("<b>PostgreSQL 17</b><br/>utilisateurs, tickets,<br/>commentaires, notifications")]
+        end
+
+        subgraph SLA["Suivi des délais"]
+            SPRING["<b>sla-service</b><br/>Java 21 · Spring Boot<br/>:8081"]
+            ORA[("<b>Oracle</b><br/>suivi SLA, audit<br/>+ fonction PL/SQL")]
+        end
+    end
+
+    NAV -->|"pages"| FRONT
+    NAV -->|"API REST + jeton JWT"| DJANGO
+    DJANGO --> PG
+    DJANGO -->|"événements ticket créé / résolu<br/>REST + en-tête X-API-Key"| SPRING
+    SPRING --> ORA
 ```
-Utilisateur / Technicien
-        │
-        ▼
-[ticket-service]  Django + DRF + PostgreSQL (SQLite possible en développement)
-  - comptes et rôles (utilisateur, technicien, admin), JWT
-  - création, assignation et clôture des tickets
-        │  (API REST : événement « ticket créé / résolu »)
-        ▼
-[sla-service]  Java 21 + Spring Boot + Oracle (PL/SQL)
-  - délais de résolution (SLA) par priorité
-  - alertes sur les tickets en retard
-  - statistiques et rapports
-  - piste d'audit
-```
+
+- **ticket-service** (Django, PostgreSQL) : comptes et rôles (utilisateur, technicien, administrateur),
+  tickets, répartition automatique, notifications, statistiques.
+- **sla-service** (Spring Boot, Oracle) : échéance de chaque ticket selon sa priorité, détection des
+  retards, piste d'audit, taux de respect du SLA calculé par une fonction PL/SQL.
+- **frontend** (Next.js) : un espace par rôle.
+
+### Conception (schémas UML)
+
+Le détail est dans **[docs/architecture.md](docs/architecture.md)** :
+
+| Schéma | Contenu |
+|---|---|
+| [Cas d'utilisation](docs/architecture.md#1-cas-dutilisation) | les trois rôles et les automatismes du système |
+| [Architecture et déploiement](docs/architecture.md#2-architecture-et-déploiement) | services, bases, flux, choix de conception |
+| [Diagrammes de classes](docs/architecture.md#3-diagrammes-de-classes) | modèle métier de Django et de Spring Boot |
+| [Modèle relationnel](docs/architecture.md#4-modèle-relationnel-des-deux-bases) | tables PostgreSQL et Oracle, clés, suppressions en cascade |
+| [Diagrammes de séquence](docs/architecture.md#5-diagrammes-de-séquence) | création d'un ticket, résolution et attribution du suivant, statistiques SLA |
+| [Diagrammes d'états](docs/architecture.md#6-diagrammes-détats) | cycle de vie d'un ticket et d'un technicien |
 
 ## Règles métier
 | Priorité | Délai de résolution (SLA) |
@@ -88,7 +123,20 @@ cd sla-service && ./mvnw test                                        # H2 en mé
 
 ## Intégration et déploiement continus (GitHub Actions)
 
-Le workflow `.github/workflows/ci.yml` se déclenche à chaque `push` sur `main` et à chaque pull request :
+### Branches et flux de travail
+
+```
+ feature / correctif  ──push──▶  develop  ──pull request──▶  main  ──▶ publication des images
+                                    │                           │
+                              CI à chaque envoi        CI à nouveau (porte d'entrée)
+```
+
+- `develop` reçoit le code en premier : le CI vérifie chaque envoi.
+- Une pull request `develop` → `main` rejoue toutes les vérifications avant la fusion.
+- Seule la branche `main` publie les images Docker.
+- Dependabot ouvre ses propositions vers `develop` (jamais directement vers `main`).
+
+Le workflow `.github/workflows/ci.yml` se déclenche à chaque `push` sur `main` ou `develop`, et à chaque pull request vers l'une de ces branches :
 
 | Job | Vérifie |
 |---|---|

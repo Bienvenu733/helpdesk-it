@@ -101,7 +101,9 @@ jobs:
       - name: ESLint
         run: npx eslint .
       - name: TypeScript
-        run: npx tsc --noEmit
+        # Next.js génère lui-même certains types (LayoutProps...) : sur un dépôt vierge, il faut
+        # les produire avant de lancer tsc.
+        run: npx next typegen && npx tsc --noEmit
       - name: Compilation de production
         run: npm run build
 
